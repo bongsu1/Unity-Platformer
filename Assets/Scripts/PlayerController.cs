@@ -53,6 +53,11 @@ public class PlayerController : MonoBehaviour
         }
 
         animator.SetFloat("YSpeed", rigid.velocity.y);
+
+        if (transform.position.y < -30)
+        {
+            transform.position = new Vector2(-2f, -1.5f);
+        }
     }
 
     void Jump()
