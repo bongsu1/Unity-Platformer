@@ -18,8 +18,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float maxYSpeed;
     [SerializeField] float jumpSpeed;
 
+    [SerializeField] LayerMask groundCheck;
+
     Vector2 moveDir;
     bool isGround;
+
+    Collider2D myColl;
+    Collider2D coll;
+
+    private void Awake()
+    {
+        myColl = GetComponent<Collider2D>();
+    }
 
     void FixedUpdate()
     {
@@ -56,7 +66,7 @@ public class PlayerController : MonoBehaviour
 
         if (transform.position.y < -30)
         {
-            transform.position = new Vector2(-2f, -1.5f);
+            transform.position = new Vector2(-6.4f, -1.5f);
         }
     }
 
@@ -85,23 +95,58 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetBool("Run", false);
         }
+
+        if(moveDir.y < 0)
+        {
+            animator.SetBool("Crouch", true);
+        }
+        else
+        {
+            animator.SetBool("Crouch", false);
+        }
     }
 
     void OnJump(InputValue value)
     {
+        if (moveDir.y < 0)
+        {
+            StartCoroutine(DownJump());
+            return;
+        }
+
         if (value.isPressed && isGround)
         {
             Jump();
         }
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    IEnumerator DownJump()
     {
-        isGround = true;
+        Collider2D platform = coll;
+        Physics2D.IgnoreCollision(myColl, platform);
+        yield return new WaitForSeconds(0.5f);
+        Physics2D.IgnoreCollision(myColl, platform, false);
     }
 
-    void OnCollisionExit2D(Collision2D collision)
+    private int groundCount;
+    void OnTriggerEnter2D(Collider2D collision)
     {
-        isGround = false;
+        if (((1 << collision.gameObject.layer) & groundCheck) != 0)
+        {
+            coll = collision.gameObject.GetComponent<Collider2D>();
+            groundCount++;
+            isGround = groundCount > 0;
+            animator.SetBool("IsGround", isGround);
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D collision)
+    {
+        if (groundCheck.Contain(collision.gameObject.layer))
+        {
+            groundCount--;
+            isGround = groundCount > 0;
+            animator.SetBool("IsGround", isGround);
+        }
     }
 }
